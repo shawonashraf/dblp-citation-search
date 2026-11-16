@@ -1,1 +1,1 @@
-# dblp-citation-finder
+# dblp-citation-search
