@@ -15,7 +15,9 @@ Turn an arXiv URL or a paper title into the dblp BibTeX of the paper's published
 - Keep dblp traffic to what a person would do: one search page (a second only when step 3 asks
   the user for an author), then one BibTeX page per entry the user wants. No extra pages, no
   retries by reloading.
-- Use one new tab for the lookup and close it at the end, including when you stop early.
+- Use one new tab for the lookup. Keep it open while you wait for a user reply that needs it
+  (the author's surname, a pick between versions, a yes to the CoRR BibTeX offer); close it
+  otherwise, including when you stop early.
 
 ## 1. Get the title (and first author)
 
@@ -138,4 +140,5 @@ with one line saying which venue and year it is.
 
 ## 6. Close the tab
 
-`tabs_close_mcp` on the tab you created. Do this on every exit after step 2.
+`tabs_close_mcp` on the tab you created. Do this on every exit after step 2, except while
+waiting for a reply that needs the tab (see Rules); close it once that reply is handled.
