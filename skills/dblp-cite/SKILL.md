@@ -19,16 +19,18 @@ Turn an arXiv URL or a paper title into the dblp BibTeX of the paper's published
 
 ## 1. Get the title (and first author)
 
-**arXiv URL** (`arxiv.org/abs/...`, `/pdf/...`, `/html/...`): extract the ID. New-style IDs look
-like `2401.01234`; old-style like `cs/0112017` or `hep-th/9901001`. Drop a trailing `vN` and
-`.pdf`. Then run:
+**arXiv URL or arXiv ID** (`arxiv.org/abs/...`, `/pdf/...`, `/html/...`, or a bare ID such as
+`1706.03762`, `arXiv:1706.03762`, `cs/0112017`): extract the ID. New-style IDs look like
+`2401.01234`; old-style like `cs/0112017` or `hep-th/9901001`. Drop an `arXiv:` prefix, a
+trailing `vN`, and `.pdf`. Then run:
 
 ```bash
 curl -s "https://export.arxiv.org/api/query?id_list=<id>"
 ```
 
 From the `<entry>` element (not the feed's own `<title>`), take the `<title>` (join its lines
-with single spaces) and the first `<author><name>`. The first author's surname is the last word
+with single spaces) and the first `<author><name>`. Decode XML entities in both (`&amp;` → `&`,
+`&lt;` → `<`, `&gt;` → `>`, `&quot;` → `"`, `&apos;` → `'`). The first author's surname is the last word
 of that name. If there is no `<entry>` or it has no title, tell the user the arXiv ID was not
 found and stop.
 
@@ -58,19 +60,28 @@ there is no author).
 Read the results with `javascript_tool`:
 
 ```js
+const TITLE = "...";  // replace with JSON.stringify(<searched title>), never paste it raw
 const norm = s => s.toLowerCase().replace(/\s+/g, ' ').trim().replace(/\.$/, '');
-const want = norm(TITLE);  // replace TITLE with the searched title as a JS string literal
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Wait up to 15 s for dblp's bot check to finish and the results to render.
+const isBot = () => /not a bot/i.test(document.title);
+const info = () => document.querySelector('#completesearch-info-matches')?.innerText.trim() || '';
+for (let i = 0; i < 30 && (isBot() || !info()); i++) await sleep(500);
+const status = info();
+const entries = [...document.querySelectorAll('#completesearch-publs li.entry')];
 ({
-  botCheck: /not a bot/i.test(document.title),
-  found: (document.body.innerText.match(/found (\S+) match/) || [])[1] || null,
-  loaded: document.querySelectorAll('li.entry').length,
-  matches: [...document.querySelectorAll('li.entry')]
-    .filter(li => norm(li.querySelector('.title')?.textContent || '') === want)
+  ready: !isBot() && status !== '',
+  botCheck: isBot(),
+  found: /no match/i.test(status) ? 0 : Number((status.match(/([\d,]+)\s+match/) || [])[1]?.replace(/,/g, '')) || null,
+  loaded: entries.length,
+  matches: entries
+    .filter(li => norm(li.querySelector('.title')?.textContent || '') === norm(TITLE))
     .map(li => {
       const bib = [...li.querySelectorAll('a')].map(a => a.href).find(h => h.includes('view=bibtex')) || '';
       return {
         title: li.querySelector('.title').textContent,
         cite: li.querySelector('cite').textContent,
+        preprint: li.classList.contains('informal'),
         // Split on "/": the Chrome tool hides strings like "conf/nips/VaswaniSPUJGKP17" as
         // base64. Join keyParts with "/" to get the record key.
         keyParts: ((bib.match(/\/rec\/(.+)\.html/) || [])[1] || '').split('/'),
@@ -79,23 +90,30 @@ const want = norm(TITLE);  // replace TITLE with the searched title as a JS stri
 })
 ```
 
-- `botCheck` true: the browser is solving dblp's check. Wait about 5 seconds and run the script
-  again. Do this at most 3 times, without reloading. Still blocked: tell the user, close the
-  tab, stop.
+- `ready` false, or the script errors (the page can reload itself once the bot check passes):
+  run the script again, without reloading the page. At most 3 runs in total. Still not ready:
+  tell the user dblp's bot check did not finish, close the tab, stop.
 - Each match's record key is its `keyParts` joined with `/` (e.g. `conf/nips/VaswaniSPUJGKP17`).
-- A match whose key starts with `journals/corr/` is the arXiv (CoRR) version. Every other match
-  is a published version.
+- `preprint` true means dblp files the entry under "Informal and Other Publications": CoRR
+  (key starts with `journals/corr/`) and other preprint servers. Every other match is a
+  published version.
 
-**Title-only search with no matches**, when `found` is larger than `loaded` (more results exist
-than the page shows): ask the user for the first author's surname, then search once more with
-it and re-run the script. If they don't know it, go to step 4 with no matches.
+**No matches, and `found` is larger than `loaded`** (more results exist than the page shows):
+- Title-only search: ask the user for the first author's surname, then search once more with it
+  and re-run the script.
+- Search already included the surname, or the user doesn't know it: go to step 4 as
+  **Not confirmed**.
 
 ## 4. Decide
 
+- **Not confirmed:** tell the user the title was not on the first page of the N dblp results,
+  so you could not confirm whether a published version exists. Cite the arXiv version unless
+  they know the paper appeared somewhere.
 - **No matches:** the paper is not on dblp under this title. Tell the user to cite the arXiv
   version.
-- **Only CoRR matches:** dblp has only the arXiv version. Tell the user to cite the arXiv version,
-  and offer to fetch its dblp BibTeX. Fetch it (step 5) only if they say yes.
+- **Only preprint matches:** dblp has only preprint versions. Tell the user to cite the arXiv
+  version. If one of them is the CoRR entry, offer to fetch its dblp BibTeX, and fetch it
+  (step 5) only if they say yes.
 - **One published match:** go to step 5 with it.
 - **Several published matches:** list them, numbered, with venue and year (from `cite`) and the
   key. Ask the user which one they want. Go to step 5 with their pick.
@@ -106,8 +124,14 @@ it and re-run the script. If they don't know it, go to step 4 with no matches.
 BibTeX inside the page). Read it with `javascript_tool`:
 
 ```js
-document.querySelector('pre').textContent.split('\n')
+for (let i = 0; i < 30 && !document.querySelector('pre'); i++) await new Promise(r => setTimeout(r, 500));
+document.querySelector('pre')?.textContent.split('\n')
+  ?? (/not a bot/i.test(document.title) ? 'BOT_CHECK' : 'NO_BIBTEX')
 ```
+
+`BOT_CHECK` or an error: run it again, without reloading, at most 3 runs in total. `NO_BIBTEX`,
+or still blocked: tell the user, give them the record URL `https://dblp.org/rec/<key>`, close the
+tab, stop.
 
 Join the lines with newlines and give the user the BibTeX unchanged, in a ```bibtex block,
 with one line saying which venue and year it is.
