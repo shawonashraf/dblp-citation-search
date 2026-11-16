@@ -49,7 +49,8 @@ If they are not available, or `tabs_context_mcp` fails, stop and tell the user t
 Code with `claude --chrome` (or connect the Claude in Chrome extension). Do not look up dblp any
 other way.
 
-Call `tabs_context_mcp`, then `tabs_create_mcp`, and use the new tab for everything below.
+Call `tabs_context_mcp` with `createIfEmpty: true`. If that created a new group with one empty
+tab, use that tab; otherwise call `tabs_create_mcp`. Use this tab for everything below.
 
 ## 3. Search dblp
 
