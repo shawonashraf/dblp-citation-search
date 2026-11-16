@@ -6,6 +6,10 @@ the published version (conference or journal). If dblp only has the arXiv (CoRR)
 does not have the paper at all, it tells you to cite the arXiv version. If several published
 versions match, it lists them and asks which one you want.
 
+> [!WARNING]
+> The lookup is done by an AI model. Always check the BibTeX against the paper's dblp page
+> before you cite it: it may have matched the wrong entry or changed the BibTeX.
+
 ## Requirements
 
 - Claude Code with the Claude in Chrome extension connected
