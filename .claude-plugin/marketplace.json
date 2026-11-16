@@ -3,6 +3,7 @@
   "owner": {
     "name": "Shawon Ashraf"
   },
+  "description": "Citation lookup for arXiv papers: finds the published version on dblp and returns its BibTeX.",
   "plugins": [
     {
       "name": "dblp-citation-search",
