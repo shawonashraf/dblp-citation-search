@@ -4,5 +4,12 @@
   "description": "Turn an arXiv URL or paper title into the dblp BibTeX of the paper's published (non-CoRR) version, or say to cite arXiv.",
   "author": {
     "name": "Shawon Ashraf"
-  }
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/shawonashraf/dblp-citation-search",
+  "repository": "https://github.com/shawonashraf/dblp-citation-search",
+  "documentationUrl": "https://github.com/shawonashraf/dblp-citation-search#readme",
+  "supportUrl": "https://github.com/shawonashraf/dblp-citation-search/issues",
+  "privacyPolicyUrl": "https://github.com/shawonashraf/dblp-citation-search/blob/main/PRIVACY.md",
+  "termsOfServiceUrl": "https://github.com/shawonashraf/dblp-citation-search/blob/main/LICENSE"
 }
