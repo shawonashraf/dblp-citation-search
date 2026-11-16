@@ -1,0 +1,13 @@
+{
+  "name": "dblp-citation-search",
+  "owner": {
+    "name": "Shawon Ashraf"
+  },
+  "plugins": [
+    {
+      "name": "dblp-citation-search",
+      "source": "./",
+      "description": "Turn an arXiv URL or paper title into the dblp BibTeX of the paper's published (non-CoRR) version, or say to cite arXiv."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "dblp-citation-search",
+  "version": "0.1.0",
+  "description": "Turn an arXiv URL or paper title into the dblp BibTeX of the paper's published (non-CoRR) version, or say to cite arXiv.",
+  "author": {
+    "name": "Shawon Ashraf"
+  }
+}
